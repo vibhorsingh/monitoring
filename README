@@ -1,0 +1,16 @@
+As a developer, I think one of the prime responsibilities should be to have a constant vigil eye on the servers where one's application is deployed. A tool for this purpose serves as an early warning system to tackle issues like sudden load on servers, huge memory consumptions, etc. Such tools also gives you insights about the distribution of load on your servers throughout the day. This way you can set additional system resources at the peak times and remove/limit unwanted ones for optimum usage.
+
+I myself wanted to have such monitoring tool for one of the critical applications in my current job. The task was to monitor the servers where a particular web application and data store were hosted. For demonstration purpose, lets say the web app was hosted on server1 and the data store on server2. Now, I could have used any freely available monitoring tool (believe me there are lots of them available) to achieve this, but then the underlying principle of any monitoring tool is to collect data (from the system) and present it(mostly graphically). So I thought to take a dive into this and came up with a pretty simple solution using some basic Linux utilities.
+
+The overall idea was:
+- capture the output of 'top' command on both servers ( to identify load and memory usage)
+- make server2 send data to server1 using 'telnet' ( to capture data from server2)
+- store in sqlite DB ( on server1)
+- create some visualizations with this data.
+
+The challenge here was #2 above. Communication between two machines take place by using sockets. A socket consists of an IP address and a port number that together make an endpoint of a TCP connection. Multiple ports on same IP/machine allow designated endpoints for soft-wares to communicate over the network. e.g. Apache HTTP web server uses port 80 to listen HTTP requests.
+
+To achieve #2, I had to open a custom port on server2. And on this port, I would output a formatted string of the 'top' command at regular intervals using a cron. Then, I made the server1 to listen at this port using the telnet service. Whatever was outputted on this port was stored in sqlite DB on server1.
+The same data collection script would also run on server1, only in this case there is no telnet service used but the direct output of 'top' command.
+
+At every minute, I would get data from both the servers using cron scripts. The data thus stored was presented in a graphical way to give an almost live overview of the system health.
